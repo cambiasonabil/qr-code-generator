@@ -1,45 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import QRCode from 'qrcode.react';
 import axios from 'axios';
-import cheerio from 'cheerio';
-import Image from 'next/image';
 
 function QrCodeGenerator() {
   const [text, setText] = useState('');
+  const [size, setSize] = useState('16');
   const [faviconUrl, setFaviconUrl] = useState('');
 
-  useEffect(() => {
-    // Function to retrieve the website's favicon
-    async function getFaviconUrl(websiteUrl) {
-      try {
-        // Make an HTTP GET request to the website
-        const response = await axios.get(websiteUrl);
+  const fetchFavicon = async () => {
+    try {
+      // Construct the URL for fetching the favicon based on the input URL and selected size
+      const faviconApiUrl = `https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${text}&size=${size}`;
 
-        // Parse the HTML content of the website using Cheerio
-        const $ = cheerio.load(response.data);
-
-        // Find the <link> tag with rel="icon" or rel="shortcut icon"
-        const faviconLink = $('link[rel="icon"], link[rel="shortcut icon"]');
-
-        // Extract the href attribute (URL) of the favicon
-        const faviconUrl = faviconLink.attr('href');
-
-        if (faviconUrl) {
-          // Construct the absolute URL if it's a relative URL
-          const absoluteFaviconUrl = new URL(faviconUrl, websiteUrl).href;
-          setFaviconUrl(absoluteFaviconUrl);
-        }
-      } catch (error) {
-        console.error('Error retrieving favicon:', error);
+      // Make a request to fetch the favicon
+      const response = await axios.get(faviconApiUrl);
+console.log(response)
+      // Check if the response contains data
+      if (response.data) {
+        setFaviconUrl(faviconApiUrl); // Set the favicon URL
+      } else {
+        console.error('No favicon found');
       }
+    } catch (error) {
+      console.error('Error fetching favicon:', error);
     }
-
-    if (text.startsWith('http://') || text.startsWith('https://')) {
-      getFaviconUrl(text);
-    } else {
-      setFaviconUrl(''); // Reset favicon URL if the input is not a valid URL
-    }
-  }, [text]);
+  };
 
   return (
     <div>
@@ -49,12 +34,18 @@ function QrCodeGenerator() {
         onChange={(e) => setText(e.target.value)}
         placeholder="Enter website URL"
       />
-      <QRCode value={text}>
-        {/* Add the retrieved favicon as an image in the center of the QR code */}
-        {faviconUrl && (
-          <Image x={25} y={25} width={50} height={50} xlinkHref={faviconUrl} alt='favicon' />
-        )}
-      </QRCode>
+      <select value={size} onChange={(e) => setSize(e.target.value)}>
+        <option value="16">16x16</option>
+        <option value="32">32x32</option>
+        <option value="64">64x64</option>
+      </select>
+      <button onClick={fetchFavicon}>Fetch Favicon</button>
+      {faviconUrl && (
+        <QRCode value={text}>
+          {/* Display the fetched favicon as an image in the center of the QR code */}
+          <image x={25} y={25} width={size} height={size} xlinkHref={faviconUrl} />
+        </QRCode>
+      )}
     </div>
   );
 }
