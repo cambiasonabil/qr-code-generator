@@ -3,6 +3,9 @@ import Image from 'next/image';
 import { useState, useRef } from 'react';
 import { QRCode } from 'react-qrcode-logo';
 import placeholder from '../assets/placeholder.webp';
+import html2canvas from 'html2canvas'; // Import html2canvas library for creating PDF
+import jsPDF from 'jspdf'; // Import jsPDF library for creating PDF
+
 
 
 export default function OurQrCodeGenerator() {
@@ -67,6 +70,39 @@ export default function OurQrCodeGenerator() {
     setBottomLeft(newValues); // Set the new values
   };
 
+  const downloadCanvasAsPNG = () => {
+    setTimeout(() => {
+      html2canvas(document.getElementById('the-qrcode-container'), { logging: true, useCORS: true }).then((canvas) => {
+        const imgData = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = imgData;
+        a.download = 'qrcode.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
+    }, 500); // Adjust the delay as needed
+  };
+
+  const downloadQRCode = () => {
+    if (selectedFormat === 'png') {
+      downloadCanvasAsPNG();
+
+    } else if (selectedFormat === 'pdf') {
+      // Download as PDF
+      setTimeout(() => {
+        const element = document.getElementById('the-qrcode-container');
+  
+        html2canvas(element).then((canvas) => {
+          const imgData = canvas.toDataURL('image/png');
+          const pdf = new jsPDF('p', 'px', 'a4');
+          pdf.addImage(imgData, 'PNG', 30, 30);
+          pdf.save('qrcode.pdf');
+        });
+      }, 1500); // Adjust the delay as needed
+    }
+    
+  };
 
 
   return (
@@ -213,7 +249,10 @@ export default function OurQrCodeGenerator() {
           <span className="text-gray-500"></span>
           <h1 className="text-xl font-bold text-gray-700">Your QR Code will appear here</h1>
           {qrCodeUrl ? (
-            <QRCode value={qrCodeUrl}
+            <div id='the-qrcode-container'  >
+            <QRCode
+             
+             value={qrCodeUrl}
               logoImage={`https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${qrCodeUrl}&size=128`}
               removeQrCodeBehindLogo={true}
               size={300}
@@ -231,7 +270,9 @@ export default function OurQrCodeGenerator() {
               fgColor={selectedForegroundColor}  // Use a dark foreground color to improve readability
               logoPadding={5}  // Adjust logo padding to your preference
               logoPaddingStyle={'circle'}
-            />)
+            />
+            </div>
+            )
             : <div>
               <Image
                 src={placeholder}
@@ -276,7 +317,10 @@ export default function OurQrCodeGenerator() {
           >PDF</button>
         </div>
 
-        <button className="mt-4 w-full bg-green-400 text-white p-2 rounded shadow">
+        <button 
+        className="mt-4 w-full bg-green-400 text-white p-2 rounded shadow"
+        onClick={downloadQRCode}
+        >
           Download QR Code
         </button>
 
