@@ -1,6 +1,7 @@
 import Head from 'next/head';
+import domtoimage from 'dom-to-image';
 import Image from 'next/image';
-import { useState, useRef } from 'react';
+import { useState,useEffect, useRef } from 'react';
 import { QRCode } from 'react-qrcode-logo';
 import placeholder from '../assets/placeholder.webp';
 import html2canvas from 'html2canvas'; // Import html2canvas library for creating PDF
@@ -20,8 +21,25 @@ export default function OurQrCodeGenerator() {
   const [topLeft, setTopLeft] = useState([10, 10, 0, 10]);
   const [topRight, setTopRight] = useState([10, 10, 0, 10]);
   const [bottomLeft, setBottomLeft] = useState([10, 10, 0, 10]);
+  const [base64Logo, setBase64Logo] = useState('');
 
-
+  useEffect(() => {
+    if(qrCodeUrl !== ''){
+      fetch(`https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${qrCodeUrl}&size=128`)
+      .then(response => response.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob); 
+        reader.onloadend = function() {
+          const base64data = reader.result;                
+          setBase64Logo(base64data);
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching or converting the image:', error);
+      });
+    }   
+  }, [qrCodeUrl]);
 
   const handleResolutionChange = (e) => {
     const value = parseInt(e.target.value, 10);
@@ -84,9 +102,26 @@ export default function OurQrCodeGenerator() {
     }, 500); // Adjust the delay as needed
   };
 
+
+const downloadQRCodeAsImage = () => {
+  const qrCodeElement = document.getElementById('the-qrcode-container');
+  if (qrCodeElement) {
+    domtoimage.toPng(qrCodeElement)
+      .then(function (dataUrl) {
+        const link = document.createElement('a');
+        link.download = 'qrcode.png';
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch(function (error) {
+        console.error('Could not download QR code', error);
+      });
+  }
+};
+
   const downloadQRCode = () => {
     if (selectedFormat === 'png') {
-      downloadCanvasAsPNG();
+      downloadQRCodeAsImage();
 
     } else if (selectedFormat === 'pdf') {
       // Download as PDF
@@ -245,15 +280,15 @@ export default function OurQrCodeGenerator() {
       </div>
 
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <div className="flex flex-col items-center bg-gray-100 rounded  w-full mb-4 p-2" ref={qrcodeContainerRef}>
+        <div className="flex flex-col items-center bg-gray-100 rounded  w-full mb-4 p-2" >
           <span className="text-gray-500"></span>
           <h1 className="text-xl font-bold text-gray-700">Your QR Code will appear here</h1>
           {qrCodeUrl ? (
-            <div id='the-qrcode-container'  >
+            <div id='the-qrcode-container'>
             <QRCode
-             
+              ref={qrcodeContainerRef}
              value={qrCodeUrl}
-              logoImage={`https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${qrCodeUrl}&size=128`}
+              logoImage={base64Logo}
               removeQrCodeBehindLogo={true}
               size={300}
               ecLevel={'H'}
