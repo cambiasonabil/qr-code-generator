@@ -19,6 +19,8 @@ export default function Home() {
       <main>
         <OurQrCodeGenerator />
       </main>
+
+      {/* Created by Nabil cambiaso -- Media elegant */}
     </div>
   );
 }
