@@ -1,6 +1,6 @@
 import Head from 'next/head'
-import QrCodeGenerator from './components/QrCodeGenerator'
-import OurQrCodeGenerator from './OurQrCodeGenerator';
+import QrCodeGenerator from '../src/components/QrCodeGenerator'
+import OurQrCodeGenerator from '../src/components/OurQrCodeGenerator';
 
 
 

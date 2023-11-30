@@ -3,7 +3,7 @@ import domtoimage from 'dom-to-image';
 import Image from 'next/image';
 import { useState,useEffect, useRef } from 'react';
 import { QRCode } from 'react-qrcode-logo';
-import placeholder from '../assets/placeholder.webp';
+import placeholder from '../../assets/placeholder.webp';
 import html2canvas from 'html2canvas'; // Import html2canvas library for creating PDF
 import jsPDF from 'jspdf'; // Import jsPDF library for creating PDF
 
