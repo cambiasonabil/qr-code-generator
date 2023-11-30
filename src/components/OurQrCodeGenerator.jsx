@@ -1,11 +1,12 @@
 import Head from 'next/head';
 import domtoimage from 'dom-to-image';
 import Image from 'next/image';
-import { useState,useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { QRCode } from 'react-qrcode-logo';
 import placeholder from '../../assets/placeholder.webp';
 import html2canvas from 'html2canvas'; // Import html2canvas library for creating PDF
 import jsPDF from 'jspdf'; // Import jsPDF library for creating PDF
+import ReactDOM from 'react-dom/client';
 
 
 
@@ -24,21 +25,21 @@ export default function OurQrCodeGenerator() {
   const [base64Logo, setBase64Logo] = useState('');
 
   useEffect(() => {
-    if(qrCodeUrl !== ''){
+    if (qrCodeUrl !== '') {
       fetch(`https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${qrCodeUrl}&size=128`)
-      .then(response => response.blob())
-      .then(blob => {
-        const reader = new FileReader();
-        reader.readAsDataURL(blob); 
-        reader.onloadend = function() {
-          const base64data = reader.result;                
-          setBase64Logo(base64data);
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching or converting the image:', error);
-      });
-    }   
+        .then(response => response.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.readAsDataURL(blob);
+          reader.onloadend = function () {
+            const base64data = reader.result;
+            setBase64Logo(base64data);
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching or converting the image:', error);
+        });
+    }
   }, [qrCodeUrl]);
 
   const handleResolutionChange = (e) => {
@@ -88,55 +89,65 @@ export default function OurQrCodeGenerator() {
     setBottomLeft(newValues); // Set the new values
   };
 
-  const downloadCanvasAsPNG = () => {
-    setTimeout(() => {
-      html2canvas(document.getElementById('the-qrcode-container'), { logging: true, useCORS: true }).then((canvas) => {
-        const imgData = canvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = imgData;
-        a.download = 'qrcode.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      });
-    }, 500); // Adjust the delay as needed
+
+
+
+  const dowloadPDF = () => {
+    const element = document.getElementById('the-qrcode-container');
+
+    html2canvas(element).then((canvas) => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'px', 'a4');
+      pdf.addImage(imgData, 'PNG', 30, 30);
+      pdf.save('qrcode.pdf');
+    });
   };
 
+  const downloadQRCodeAsHDImage = () => {
+    // Create a container for the high-resolution QR code
+    const tempDiv = document.createElement('div');
+    tempDiv.id = 'high-res-qrcode-container';
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.left = '-9999px'; // Position off-screen
+    tempDiv.style.top = '-9999px'; // Ensure it's fully off-screen
+    document.body.appendChild(tempDiv);
 
-const downloadQRCodeAsImage = () => {
-  const qrCodeElement = document.getElementById('the-qrcode-container');
-  if (qrCodeElement) {
-    domtoimage.toPng(qrCodeElement)
-      .then(function (dataUrl) {
-        const link = document.createElement('a');
-        link.download = 'qrcode.png';
-        link.href = dataUrl;
-        link.click();
-      })
-      .catch(function (error) {
-        console.error('Could not download QR code', error);
-      });
-  }
-};
+    // Render high-resolution QR code inside the container
+    ReactDOM.createRoot(tempDiv).render(
+      <QRCode
+        value={qrCodeUrl}
+        logoImage={base64Logo}
+        removeQrCodeBehindLogo={true}
+        size={resolution} // High resolution size
+        ecLevel={'H'}
+        eyeColor={selectedEyeColor}
+        eyeRadius={[topLeft, topRight, bottomLeft]}
+        bgColor={selectedBackgroundColor}
+        fgColor={selectedForegroundColor}
+        logoHeight={90} // Adjusted for high resolution
+        logoWidth={90} // Adjusted for high resolution
+        logoPadding={15} // Adjusted for high resolution
+        logoPaddingStyle={'circle'}
+      />
+    );
 
-  const downloadQRCode = () => {
-    if (selectedFormat === 'png') {
-      downloadQRCodeAsImage();
-
-    } else if (selectedFormat === 'pdf') {
-      // Download as PDF
-      setTimeout(() => {
-        const element = document.getElementById('the-qrcode-container');
-  
-        html2canvas(element).then((canvas) => {
-          const imgData = canvas.toDataURL('image/png');
-          const pdf = new jsPDF('p', 'px', 'a4');
-          pdf.addImage(imgData, 'PNG', 30, 30);
-          pdf.save('qrcode.pdf');
+    // Use a timeout to ensure the high-res QR code is rendered
+    setTimeout(() => {
+      if (selectedFormat === 'pdf') {
+        dowloadPDF();
+      } else {
+        html2canvas(tempDiv, { logging: true, useCORS: true }).then((canvas) => {
+          const imgData = canvas.toDataURL(`${selectedFormat === 'png' ? 'image/png' : 'image/jpeg'}`);
+          const link = document.createElement('a');
+          link.download = `qrcode-${resolution}.${selectedFormat === 'png' ? 'png' : 'jpg'}`;
+          link.href = imgData;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          document.body.removeChild(tempDiv);
         });
-      }, 1500); // Adjust the delay as needed
-    }
-    
+      }
+    }, 1000); 
   };
 
 
@@ -262,20 +273,13 @@ const downloadQRCodeAsImage = () => {
           Create QR Code
         </button>
 
-        {/* <div className="flex justify-between items-center">
-          <button className="text-purple-700">PNG</button>
-          <button className="text-purple-800">JPG</button>
-          <button className="text-purple-900">PDF</button>
-        </div> */}
-
         {/* History Section (placeholder) */}
-        <div className="mt-4">
+        {/* <div className="mt-4">
           <h2 className="text-sm text-gray-600">History (4)</h2>
-          {/* Placeholder for history items */}
           <div className="bg-gray-100 mt-2 p-2 rounded">
             <p className="text-xs text-gray-500">Previous QR codes...</p>
           </div>
-        </div>
+        </div> */}
 
       </div>
 
@@ -285,29 +289,29 @@ const downloadQRCodeAsImage = () => {
           <h1 className="text-xl font-bold text-gray-700">Your QR Code will appear here</h1>
           {qrCodeUrl ? (
             <div id='the-qrcode-container'>
-            <QRCode
-              ref={qrcodeContainerRef}
-             value={qrCodeUrl}
-              logoImage={base64Logo}
-              removeQrCodeBehindLogo={true}
-              size={300}
-              ecLevel={'H'}
-              eyeColor={selectedEyeColor}
-              eyeRadius={[topLeft, topRight, bottomLeft]}
-              //  logoHeight={32}
-              //  logoWidth={32}
-              //  bgColor='black'
-              //  fgColor='white'
-              //  logoPadding={10}
-              logoHeight={30} // Adjust logo height to your preference
-              logoWidth={30}  // Adjust logo width to your preference
-              bgColor={selectedBackgroundColor}  // Use a light background color to improve readability
-              fgColor={selectedForegroundColor}  // Use a dark foreground color to improve readability
-              logoPadding={5}  // Adjust logo padding to your preference
-              logoPaddingStyle={'circle'}
-            />
+              <QRCode
+                ref={qrcodeContainerRef}
+                value={qrCodeUrl}
+                logoImage={base64Logo}
+                removeQrCodeBehindLogo={true}
+                size={300}
+                ecLevel={'H'}
+                eyeColor={selectedEyeColor}
+                eyeRadius={[topLeft, topRight, bottomLeft]}
+                //  logoHeight={32}
+                //  logoWidth={32}
+                //  bgColor='black'
+                //  fgColor='white'
+                //  logoPadding={10}
+                logoHeight={30} // Adjust logo height to your preference
+                logoWidth={30}  // Adjust logo width to your preference
+                bgColor={selectedBackgroundColor}  // Use a light background color to improve readability
+                fgColor={selectedForegroundColor}  // Use a dark foreground color to improve readability
+                logoPadding={5}  // Adjust logo padding to your preference
+                logoPaddingStyle={'circle'}
+              />
             </div>
-            )
+          )
             : <div>
               <Image
                 src={placeholder}
@@ -339,28 +343,25 @@ const downloadQRCodeAsImage = () => {
 
         <div className="flex justify-between items-center my-2">
           <button
-            className={`text-lg text-purple-${selectedFormat == 'png' ? '900' : '200'}`}
+            className={`text-lg ${selectedFormat == 'png' ? 'text-purple-900' : 'text-gray-300'}`}
             onClick={() => { setSelectedFormat('png') }}
           >PNG</button>
           <button
-            className={`text-lg text-purple-${selectedFormat == 'jpg' ? '900' : '200'}`}
+            className={`text-lg ${selectedFormat == 'jpg' ? 'text-purple-900' : 'text-gray-300'}`}
             onClick={() => { setSelectedFormat('jpg') }}
           >JPG</button>
           <button
-            className={`text-lg text-purple-${selectedFormat == 'pdf' ? '900' : '200'}`}
+            className={`text-lg ${selectedFormat == 'pdf' ? 'text-purple-900' : 'text-gray-300'}`}
             onClick={() => { setSelectedFormat('pdf') }}
           >PDF</button>
         </div>
 
-        <button 
-        className="mt-4 w-full bg-green-400 text-white p-2 rounded shadow"
-        onClick={downloadQRCode}
+        <button
+          className="mt-4 w-full bg-green-400 text-white p-2 rounded shadow"
+          onClick={downloadQRCodeAsHDImage}
         >
           Download QR Code
         </button>
-
-
-
       </div>
     </div>
   );

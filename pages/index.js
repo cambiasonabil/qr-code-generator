@@ -19,10 +19,6 @@ export default function Home() {
       <main>
         <OurQrCodeGenerator />
       </main>
-
-      <footer>
-        No copyright
-      </footer>
     </div>
   );
 }
