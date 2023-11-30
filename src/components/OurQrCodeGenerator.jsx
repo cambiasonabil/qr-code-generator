@@ -160,7 +160,7 @@ export default function OurQrCodeGenerator() {
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md md:my-16 sm:my-16 xs:my-16 my-16 lg:my-0">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-xl font-bold text-gray-700">GENERATE QR CODE</h1>
-          <span className="text-sm text-gray-500">mediaelegant.com</span>
+          <a className="text-sm text-gray-500" href='https://mediaelegant.com'>mediaelegant.com</a>
         </div>
 
         <div className="mb-4">
