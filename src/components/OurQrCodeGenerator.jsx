@@ -147,7 +147,19 @@ export default function OurQrCodeGenerator() {
           document.body.removeChild(tempDiv);
         });
       }
-    }, 1000); 
+    }, 1000);
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => {
+      setBase64Logo(reader.result);
+    };
+    reader.onerror = () => {
+      console.error('Error reading the file');
+    };
   };
 
 
@@ -264,6 +276,18 @@ export default function OurQrCodeGenerator() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* upload image here */}
+        <div className="mb-4">
+          <label htmlFor="imageUpload" className="text-sm text-gray-600">Upload Logo Image</label>
+          <input
+            type="file"
+            id="imageUpload"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="mt-1 w-full p-2 border rounded"
+          />
         </div>
 
         <button
