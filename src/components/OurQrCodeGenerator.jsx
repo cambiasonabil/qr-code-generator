@@ -193,7 +193,7 @@ export default function OurQrCodeGenerator() {
                 type="color"
                 className="border rounded h-10 w-16 mt-2"
                 id="foregroundColor"
-                value={selectedForegroundColor}
+                value={selectedEyeColor}
                 onChange={(e) => { setSelectedEyeColor(e.target.value) }}
               />
             </div>
